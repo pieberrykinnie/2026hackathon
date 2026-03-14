@@ -16,80 +16,136 @@
  */
 
 export interface Location {
-    latitude: number;
-    longitude: number;
+  latitude: number;
+  longitude: number;
 }
 
 export interface Box {
-    id: string;
-    name: string;
-    location: Location;
-    /** Minutes needed to fully repair this box once the technician arrives. */
-    fixTimeMinutes: number;
+  id: string;
+  name: string;
+  location: Location;
+  /** Minutes needed to fully repair this box once the technician arrives. */
+  fixTimeMinutes: number;
 }
 
 export interface Technician {
-    id: string;
-    name: string;
-    startLocation: Location;
-    speedKmh: number;
-    workingMinutes: number;
+  id: string;
+  name: string;
+  startLocation: Location;
+  speedKmh: number;
+  workingMinutes: number;
 }
 
 export interface DayPlanResult {
-    technicianId: string;
-    /** Ordered list of box IDs visited today. Every box must be fully completed. */
-    plannedRoute: string[];
-    /** Total minutes used (travel + all fix times). Must be ≤ workingMinutes. */
-    totalTimeUsedMinutes: number;
-    /** Equal to plannedRoute.length. */
-    boxesFixed: number;
-    /** Every box NOT in plannedRoute. */
-    skippedBoxIds: string[];
+  technicianId: string;
+  /** Ordered list of box IDs visited today. Every box must be fully completed. */
+  plannedRoute: string[];
+  /** Total minutes used (travel + all fix times). Must be ≤ workingMinutes. */
+  totalTimeUsedMinutes: number;
+  /** Equal to plannedRoute.length. */
+  boxesFixed: number;
+  /** Every box NOT in plannedRoute. */
+  skippedBoxIds: string[];
 }
 
 export class DayPlanner {
 
-    // ── Pre-implemented helpers — do not modify ───────────────────────────────
+  // ── Pre-implemented helpers — do not modify ───────────────────────────────
 
-    /**
-     * Returns the great-circle distance in kilometres between two GPS
-     * coordinates using the Haversine formula (Earth radius = 6 371 km).
-     */
-    haversineDistance(loc1: Location, loc2: Location): number {
-        const R = 6371;
-        const toRad = (deg: number) => (deg * Math.PI) / 180;
-        const dLat = toRad(loc2.latitude  - loc1.latitude);
-        const dLng = toRad(loc2.longitude - loc1.longitude);
-        const lat1 = toRad(loc1.latitude);
-        const lat2 = toRad(loc2.latitude);
-        const a =
-            Math.sin(dLat / 2) ** 2 +
-            Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  /**
+   * Returns the great-circle distance in kilometres between two GPS
+   * coordinates using the Haversine formula (Earth radius = 6 371 km).
+   */
+  haversineDistance(loc1: Location, loc2: Location): number {
+    const R = 6371;
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const dLat = toRad(loc2.latitude - loc1.latitude);
+    const dLng = toRad(loc2.longitude - loc1.longitude);
+    const lat1 = toRad(loc1.latitude);
+    const lat2 = toRad(loc2.latitude);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  /**
+   * Returns the travel time in minutes between two locations at a given speed.
+   *   travelTimeMinutes = (distanceKm / speedKmh) × 60
+   */
+  travelTimeMinutes(loc1: Location, loc2: Location, speedKmh: number): number {
+    return (this.haversineDistance(loc1, loc2) / speedKmh) * 60;
+  }
+
+  // ── Your implementation below ─────────────────────────────────────────────
+
+  calculateRouteDuration(
+    technician: Technician,
+    boxes: Box[],
+    routeIds: string[]
+  ): number | null {
+    let curr: Location = technician.startLocation;
+    let total: number = 0;
+    let valid: boolean = true;
+
+    const validIds = boxes.map((box) => box.id);
+
+    routeIds.forEach((boxId) => {
+      if (validIds.indexOf(boxId) > -1) {
+        total += this.travelTimeMinutes(boxes[validIds.indexOf(boxId)].location, curr, technician.speedKmh) + boxes[validIds.indexOf(boxId)].fixTimeMinutes;
+        curr = boxes[validIds.indexOf(boxId)].location;
+      } else {
+        valid = false;
+      }
+    });
+
+    if (valid) {
+      return total;
+    } else {
+      return null;
+    }
+  }
+
+  planDay(technician: Technician, boxes: Box[]): DayPlanResult {
+    const technicianId = technician.id;
+    const plannedRoute: string[] = [];
+    let totalTimeUsedMinutes = 0;
+    let boxesFixed = 0;
+
+    let curr: Location = technician.startLocation;
+    let toVisit: Box[] = [];
+
+    boxes.forEach(box => { toVisit.push(box) });
+
+    while (totalTimeUsedMinutes < technician.workingMinutes && toVisit.length > 0) {
+      let nextVisit = toVisit[0];
+      let lowestSoFar = this.travelTimeMinutes(curr, nextVisit.location, technician.speedKmh) + nextVisit.fixTimeMinutes;
+
+      toVisit.forEach(box => {
+        const thisDist = this.travelTimeMinutes(curr, box.location, technician.speedKmh) + box.fixTimeMinutes;
+
+        if (thisDist < lowestSoFar) {
+          nextVisit = box;
+          lowestSoFar = thisDist;
+        }
+      })
+
+      if (totalTimeUsedMinutes + lowestSoFar < technician.workingMinutes) {
+        totalTimeUsedMinutes += lowestSoFar;
+        plannedRoute.push(nextVisit.id);
+        boxesFixed++;
+        curr = nextVisit.location;
+
+        toVisit = toVisit.filter((box) => box.id !== nextVisit.id);
+      } else {
+        break;
+      }
     }
 
-    /**
-     * Returns the travel time in minutes between two locations at a given speed.
-     *   travelTimeMinutes = (distanceKm / speedKmh) × 60
-     */
-    travelTimeMinutes(loc1: Location, loc2: Location, speedKmh: number): number {
-        return (this.haversineDistance(loc1, loc2) / speedKmh) * 60;
-    }
+    const skippedBoxIds: string[] = boxes.filter(box => plannedRoute.indexOf(box.id) < 0).map(box => box.id);
 
-    // ── Your implementation below ─────────────────────────────────────────────
-
-    calculateRouteDuration(
-        technician: Technician,
-        boxes: Box[],
-        routeIds: string[]
-    ): number | null {
-        // TODO: implement this method
-        throw new Error('Not implemented');
+    return {
+      technicianId, plannedRoute, totalTimeUsedMinutes, boxesFixed, skippedBoxIds
     }
-
-    planDay(technician: Technician, boxes: Box[]): DayPlanResult {
-        // TODO: implement this method
-        throw new Error('Not implemented');
-    }
+  }
 }

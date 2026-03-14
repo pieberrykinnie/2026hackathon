@@ -15,64 +15,112 @@
  */
 
 export interface Location {
-    latitude: number;   // decimal degrees
-    longitude: number;  // decimal degrees
+  latitude: number;   // decimal degrees
+  longitude: number;  // decimal degrees
 }
 
 export interface Box {
-    id: string;
-    name: string;
-    location: Location;
+  id: string;
+  name: string;
+  location: Location;
 }
 
 export interface Technician {
-    id: string;
-    name: string;
-    startLocation: Location;
+  id: string;
+  name: string;
+  startLocation: Location;
 }
 
 export interface RouteResult {
-    technicianId: string;
-    /** Ordered list of box IDs. Every box must appear exactly once. */
-    route: string[];
-    /** Total travel distance in km. Does NOT include a return leg to start. */
-    totalDistanceKm: number;
+  technicianId: string;
+  /** Ordered list of box IDs. Every box must appear exactly once. */
+  route: string[];
+  /** Total travel distance in km. Does NOT include a return leg to start. */
+  totalDistanceKm: number;
 }
 
 export class RouteOptimizer {
 
-    // ── Pre-implemented helper — do not modify ────────────────────────────────
+  // ── Pre-implemented helper — do not modify ────────────────────────────────
 
-    /**
-     * Returns the great-circle distance in kilometres between two GPS
-     * coordinates using the Haversine formula (Earth radius = 6 371 km).
-     */
-    haversineDistance(loc1: Location, loc2: Location): number {
-        const R = 6371;
-        const toRad = (deg: number) => (deg * Math.PI) / 180;
-        const dLat = toRad(loc2.latitude  - loc1.latitude);
-        const dLng = toRad(loc2.longitude - loc1.longitude);
-        const lat1 = toRad(loc1.latitude);
-        const lat2 = toRad(loc2.latitude);
-        const a =
-            Math.sin(dLat / 2) ** 2 +
-            Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  /**
+   * Returns the great-circle distance in kilometres between two GPS
+   * coordinates using the Haversine formula (Earth radius = 6 371 km).
+   */
+  haversineDistance(loc1: Location, loc2: Location): number {
+    const R = 6371;
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const dLat = toRad(loc2.latitude - loc1.latitude);
+    const dLng = toRad(loc2.longitude - loc1.longitude);
+    const lat1 = toRad(loc1.latitude);
+    const lat2 = toRad(loc2.latitude);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // ── Your implementation below ─────────────────────────────────────────────
+
+  calculateRouteDistance(
+    technician: Technician,
+    boxes: Box[],
+    routeIds: string[]
+  ): number | null {
+    let curr: Location = technician.startLocation;
+    let total: number = 0;
+    let valid: boolean = true;
+
+    const validIds = boxes.map((box) => box.id);
+
+    routeIds.forEach((boxId) => {
+      if (validIds.indexOf(boxId) > -1) {
+        total += this.haversineDistance(boxes[validIds.indexOf(boxId)].location, curr);
+        curr = boxes[validIds.indexOf(boxId)].location;
+      } else {
+        valid = false;
+      }
+    });
+
+    if (valid) {
+      return total;
+    } else {
+      return null;
+    }
+  }
+
+  findShortestRoute(technician: Technician, boxes: Box[]): RouteResult {
+    const technicianId = technician.id;
+    const route: string[] = [];
+    let totalDistanceKm = 0;
+
+    let curr: Location = technician.startLocation;
+    let toVisit: Box[] = [];
+
+    boxes.forEach(box => { toVisit.push(box) });
+
+    while (toVisit.length > 0) {
+      let nextVisit = toVisit[0];
+      let lowestSoFar = this.haversineDistance(curr, nextVisit.location);
+
+      toVisit.forEach(box => {
+        const thisDist = this.haversineDistance(curr, box.location);
+
+        if (thisDist < lowestSoFar) {
+          nextVisit = box;
+          lowestSoFar = thisDist;
+        }
+      })
+
+      totalDistanceKm += lowestSoFar;
+      route.push(nextVisit.id);
+      curr = nextVisit.location;
+
+      toVisit = toVisit.filter((box) => box.id !== nextVisit.id);
     }
 
-    // ── Your implementation below ─────────────────────────────────────────────
-
-    calculateRouteDistance(
-        technician: Technician,
-        boxes: Box[],
-        routeIds: string[]
-    ): number | null {
-        // TODO: implement this method
-        throw new Error('Not implemented');
+    return {
+      technicianId, route, totalDistanceKm
     }
-
-    findShortestRoute(technician: Technician, boxes: Box[]): RouteResult {
-        // TODO: implement this method
-        throw new Error('Not implemented');
-    }
+  }
 }

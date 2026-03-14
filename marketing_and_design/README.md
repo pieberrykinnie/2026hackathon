@@ -11,6 +11,12 @@ The goal of this module is to produce some visual aspect of your company that th
 
 If you have any design documents or business documents, please point to them here 
 
+### README: Submission
+
+Refer to [./PITCH.md](./PITCH.md) for a document pitching a Revenue Management System for small hotel owners.
+
+Project adapted from a former hackathon I (Peter) did. Repository can be located at https://github.com/venusbhatia/NimbleRate.
+
 ## Installation Instructions
 
 If you are creating a web app and have running instructions, please put them here. We recommend creating a web app through `npm create vite@latest` so that we can easily run it by running npm start.

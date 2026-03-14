@@ -10,28 +10,28 @@ Because they fail to react to real-time demand, small business owners are losing
 
 That’s why we built NimbleRate. We are giving that 90% an affordable, zero-touch pricing engine that uses real-time local data to put their revenue on autopilot, so they stop leaving money on the table.
 
-[./images/dashboard.png](./images/dashboard.png)
+![./images/dashboard.png](./images/dashboard.png)
 
 ## Features
 
 The workflow is simple: input your hotel's location, projected dates of stays, and how full it is. We do all the work for you.
 
-[./images/overview.png](./images/overview.png)
+![./images/overview.png](./images/overview.png)
 
-[./images/calendar.png](./images/calendar.png)
+![./images/calendar.png](./images/calendar.png)
 
 See that calendar? Simply set your rates for the next 30 days to be that, and you're guaranteed the best possible value out of your rooms. Copy the rates with one click and export them to your management system of choice. We also tell you what other conditions are affecting your price, and how.
 
-[./images/affectors.png](./images/affectors.png)
+![./images/affectors.png](./images/affectors.png)
 
 ## Why NimbleRate?
 
-[./images/why.png](./images/why.png)
+![./images/why.png](./images/why.png)
 
-[./images/impact.png](./images/impact.png)
+![./images/impact.png](./images/impact.png)
 
 NimbleRate — the pricing intelligence big chains use, built for boutique stays. Free to start, takes under a minute.
 
 Stop putting money on the table. Contact us for a free demo at contact@nimblerate.ca.
 
-[./images/calltoaction.png](./images/calltoaction.png)
+![./images/calltoaction.png](./images/calltoaction.png)

@@ -2,49 +2,61 @@ import { DeviceManager, Device } from './deviceManager';
 import { UserManager, User } from './userManager';
 
 export class FleetManager {
-    deviceManager: DeviceManager;
-    userManager: UserManager;
+  deviceManager: DeviceManager;
+  userManager: UserManager;
 
-    constructor(deviceManager: DeviceManager, userManager: UserManager) {
-        this.deviceManager = deviceManager;
-        this.userManager = userManager;
-    }
+  constructor(deviceManager: DeviceManager, userManager: UserManager) {
+    this.deviceManager = deviceManager;
+    this.userManager = userManager;
+  }
 
-    addUser(user: User): void {
-        return this.userManager.addUser(user);
-    }
+  addUser(user: User): void {
+    return this.userManager.addUser(user);
+  }
 
-    removeUser(id: string): void {
-        //when we remove a user, we need to make sure all devices associated with the user are also removed
-    }
+  removeUser(id: string): void {
+    //when we remove a user, we need to make sure all devices associated with the user are also removed
+    this.userManager.removeUser(id);
 
-    getUser(id: string): User | null {
-        return this.userManager.getUser(id) ?? null;
-    }
+    const ds = this.deviceManager.getDevicesByUserId(id);
 
-    addDevice(device: Device): void {
-        // when we add a device, we need to make sure it has a valid user_id
+    if (ds !== null) {
+      ds.forEach(d => { this.deviceManager.removeDevice(d.id) })
     }
+  }
 
-    removeDevice(id: string): void {
-        return this.deviceManager.removeDevice(id);
-    }
+  getUser(id: string): User | null {
+    return this.userManager.getUser(id) ?? null;
+  }
 
-    getDevice(id: string): Device | null {
-        return this.deviceManager.getDevice(id) ?? null;
+  addDevice(device: Device): void {
+    // when we add a device, we need to make sure it has a valid user_id
+    if (this.userManager.getUser(device.user_id) !== null) {
+      this.deviceManager.addDevice(device);
+    } else {
+      throw new Error(`Cannot add device: User with id ${device.user_id} not found`)
     }
+  }
 
-    getUserDevices(userId: string): Device[] {
-        return this.deviceManager.getDevicesByUserId(userId) ?? [];
-    }
+  removeDevice(id: string): void {
+    return this.deviceManager.removeDevice(id);
+  }
 
-    getUserCount(): number {
-        return this.userManager.getUserCount();
-    }
+  getDevice(id: string): Device | null {
+    return this.deviceManager.getDevice(id) ?? null;
+  }
 
-    getDeviceCount(): number {
-        return this.deviceManager.getDeviceCount();
-    }
+  getUserDevices(userId: string): Device[] {
+    return this.deviceManager.getDevicesByUserId(userId) ?? [];
+  }
+
+  getUserCount(): number {
+    return this.userManager.getUserCount();
+  }
+
+  getDeviceCount(): number {
+    return this.deviceManager.getDeviceCount();
+  }
 }
 
 export { DeviceManager, Device } from './deviceManager';
